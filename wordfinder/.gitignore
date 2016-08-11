@@ -1,0 +1,9 @@
+# Ignore build artifacts
+*.o
+*.out
+
+# Ignore word generating program
+scowl-7.1
+
+# Ignore generated dicitonaries
+english-words.*
