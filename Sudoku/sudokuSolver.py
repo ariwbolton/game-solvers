@@ -1,4 +1,5 @@
-from board import Board
+"""Sudoku Solver"""
+from .board import Board
 
 solved = [
 	[2,9,6, 3,1,8, 5,7,4],
@@ -93,7 +94,7 @@ evil2 = Board(evilUnsolved2)
 
 random = Board()
 
-random.printBoard()
+random.print_board()
 
 
 
