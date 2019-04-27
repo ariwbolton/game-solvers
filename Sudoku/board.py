@@ -11,7 +11,7 @@ from .options import CellOptions
 class Board:
     """Board class"""
 
-    #: Width of the square board in "major squares"
+    #: Width of the square board in "subsquares"
     n = None
 
     def __init__(self, values=None, n=None):
@@ -57,7 +57,7 @@ class Board:
                 for item in row_subsquare:
                     used_item = item if item is not None else ' '
 
-                    string_item = str(used_item)        # TODO(ari): Space correctly
+                    string_item = str(used_item)
                     string_row_list.append(string_item)
 
                     string_item_len = len(string_item)
@@ -150,7 +150,7 @@ class Board:
         return (row * self.n) + col
 
     def subsquare_index_to_row_col(self, subsquare_index):
-        """Convert subsquare index to (row, col)
+        """Convert subsquare index to subsquare (row, col)
 
         Sample subsquare indices for a 3-board:
 
@@ -165,4 +165,6 @@ class Board:
 
         return subsquare_row_index, subsquare_col_index
 
-
+    def cell_to_subsquare_index(self, row, col):
+        """Convert subsquare row and column indices to subsquare index"""
+        return self.row_col_to_subsquare_index(row // self.n, col // self.n)
