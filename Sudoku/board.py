@@ -1,354 +1,168 @@
 """Board class"""
-import copy, random
+import copy
+import itertools
+import random
+
+from . import util
+from .groups import RowGroup, ColGroup, SubsquareGroup
+from .options import CellOptions
 
 
 class Board:
     """Board class"""
 
-    def __init__(self, array=None):
-        if not array:
-            array = []
+    #: Width of the square board in "major squares"
+    n = None
 
-        if array == []:
-            self.generate_random_board()
-        else:
-            self.board = copy.deepcopy(array)
+    def __init__(self, values=None, n=None):
+        """Initialize the board"""
+        self.n = n or self.n or 3
+        self.n2 = self.n * self.n
 
-        self.generate_all_possibilities()
+        if len(values) != self.n2:
+            raise Exception(f'Board has {len(values)} rows, should have {self.n2}')
 
-    def generate_random_board(self):
-        """Generate a random board."""
-        # initialize board
-        self.board = []
+        for row in values:
+            if len(row) != self.n2:
+                raise Exception(f'Board has row of length {len(row)}, should be of length {self.n2}')
 
-        for i in range(9):
-            self.board.append([0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.values = copy.deepcopy(values)
+        self.numbers = set(range(0, self.n))
 
-        row = list(range(1, 10))
+        for row in self.values:
+            for index, item in list(enumerate(row)):
+                if not item:
+                    row[index] = None
 
-        for i in range(3):
-            for j in range(3):
-                shift = i + (3 * j)
+        self.groups = {
+            'rows': [RowGroup(self, index) for index in range(0, self.n)],
+            'cols': [ColGroup(self, index) for index in range(0, self.n)],
+            'subsquares': [SubsquareGroup(self, index) for index in range(0, self.n)]
+        }
 
-                # rotate row
-                if shift == 0:
-                    new_row = row
-                else:
-                    new_row = row[(len(row) - shift):] + row[:-shift]
-
-                self.set_row((3 * i) + j, new_row)
-
-        self.print_board()
-
-        # can shuffle columns within each set of 3
-        # can shuffle rows within each set of 3
-
-        for i in range(10000):
-            self.shuffle_random_rows()
-            self.shuffle_random_cols()
-
-    def shuffle_random_rows(self):
-        """Shuffle random rows"""
-        a = [0, 1, 2]
-        random.shuffle(a)
-
-        bucket = int(random.random() * 3)
-        a = [i + (bucket * 3) for i in a]
-
-        new_first = copy.deepcopy(self.get_row((bucket * 3), self.board))
-        new_second = copy.deepcopy(self.get_row((bucket * 3) + 1, self.board))
-        new_third = copy.deepcopy(self.get_row((bucket * 3) + 2, self.board))
-
-        self.set_row(a[0], new_first)
-        self.set_row(a[1], new_second)
-        self.set_row(a[2], new_third)
-
-    def shuffle_random_cols(self):
-        """Shuffle random cols"""
-        a = [0, 1, 2]
-        random.shuffle(a)
-
-        bucket = int(random.random() * 3)
-        a = [i + (bucket * 3) for i in a]
-
-        new_first = copy.deepcopy(self.get_col(bucket * 3, self.board))
-        new_second = copy.deepcopy(self.get_col((bucket * 3) + 1, self.board))
-        new_third = copy.deepcopy(self.get_col((bucket * 3) + 2, self.board))
-
-        self.set_col(a[0], new_first)
-        self.set_col(a[1], new_second)
-        self.set_col(a[2], new_third)
-
-    def set_row(self, row_num, row):
-        """Get a row."""
-        for i in range(9):
-            self.board[row_num][i] = row[i]
-
-    def set_col(self, col_num, col):
-        """Get a col."""
-        for i in range(9):
-            self.board[i][col_num] = col[i]
+        self.cell_options = [[CellOptions(self, row, col) for col in range(0, self.n)] for row in range(0, self.n)]
 
     def print_board(self):
         """Print the board."""
-        for i in range(len(self.board)):
-            if i == 0 or i == 3 or i == 6:
-                print(" ------- ------- ------- ")
+        string_board_nested_list = []
+        max_item_length = 0
+        max_subsquare_length = 0
 
-            row = self.board[i]
+        for row in self.values:
+            string_row_list = []
 
-            line = " ".join([str(x) for x in row])
+            for row_subsquare_index, row_subsquare in enumerate(util.grouper(self.n, row)):
+                subsquare_length = 0
 
-            line = "| " + line[:5] + " | " + line[6:11] + " | " + line[12:] + " |"
-            line = line.replace("0", " ")
+                for item in row_subsquare:
+                    used_item = item if item is not None else ' '
 
-            print(line)
-        print(" ------- ------- ------- ")
+                    string_item = str(used_item)        # TODO(ari): Space correctly
+                    string_row_list.append(string_item)
 
-    def get_row(self, i, board):
+                    string_item_len = len(string_item)
+
+                    # Update max item length
+                    max_item_length = max(string_item_len, max_item_length)
+
+                    # Update subsquare length
+                    subsquare_length += string_item_len
+
+                max_subsquare_length = max(max_subsquare_length, subsquare_length)
+
+            string_board_nested_list.append(string_row_list)
+
+        # Adjust each item to be the correct length by padding
+        for row in string_board_nested_list:
+            for item, index in list(enumerate(row)):
+                row[index] = f'{item:{max_item_length}}'
+
+        # Construct horizontal spacer
+        gaps = [' '] * (self.n + 1)
+        bars = '-' * (max_subsquare_length + self.n + 1)
+
+        horizontal_spacer = bars.join(gaps)
+
+        string_board_list = []
+
+        for row_i, row in enumerate(string_board_nested_list):
+            if row_i % self.n == 0:
+                string_board_list.append(horizontal_spacer)
+
+            row_string = '|'
+
+            for subsquare in util.grouper(3, row):
+                row_string += f' {" ".join(subsquare)} |'
+
+            string_board_list.append(row_string)
+
+        string_board_list.append(horizontal_spacer)
+
+        print(*string_board_list, sep='\n')
+
+    # Getters
+
+    def row(self, i):
         """Get a row."""
-        if i < 0 or i > 8:
-            return None
+        return self.groups['rows'][i]
 
-        return board[i]
-
-    def get_col(self, i, board):
+    def col(self, i):
         """Get a col."""
-        if i < 0 or i > 8:
-            return None
+        return self.groups['cols'][i]
 
-        return [row[i] for row in board]
+    def subsquare(self, i):
+        """Get a subsquare."""
+        return self.groups['subsquares'][i]
 
-    def get_box(self, r, c, board):
-        """Get a box."""
-        row = (r // 3) * 3
-        col = (c // 3) * 3
-
-        a = []
-
-        for i in range(row, row + 3):
-            for j in range(col, col + 3):
-                a.append(board[i][j])
-
-        return a
-
-    def get_cell(self, row, col):
+    def cell(self, row, col):
         """Get a cell"""
-        return self.board[row][col]
+        return self.values[row][col]
 
-    def possibilites(self, row, col):
-        """Get possibilities"""
-        if self.board[row][col] != 0:
-            return {self.board[row][col]}
+    def options(self, row, col):
+        """Get CellOptions for a cell"""
+        return self.cell_options[row][col]
 
-        row_nums = set(self.get_row(row, self.board))
-        col_nums = set(self.get_col(col, self.board))
+    @property
+    def rows(self):
+        """Get an iterable of rows"""
+        return self.groups['rows']
 
-        box = set(self.get_box(row, col, self.board))
+    @property
+    def cols(self):
+        """Get an iterable of cols"""
+        return self.groups['rows']
 
-        all_nums = row_nums | col_nums | box
+    @property
+    def subsquares(self):
+        """Get an iterable of subsquares"""
+        return self.groups['subsquares']
 
-        if 0 in all_nums:
-            all_nums.remove(0)
+    # Setters
 
-        s = {1, 2, 3, 4, 5, 6, 7, 8, 9}
-        s = s - all_nums
+    def set_cell(self, row, col, val):
+        """Set a cell"""
+        self.values[row][col] = val
 
-        return s
+    # Util
 
-    def generate_all_possibilities(self):
-        """Generate all possibilities"""
-        p = []
+    def row_col_to_subsquare_index(self, row, col):
+        """Convert subsquare row and column indices to subsquare index"""
+        return (row * self.n) + col
 
-        for row in range(9):
-            p.append([])
+    def subsquare_index_to_row_col(self, subsquare_index):
+        """Convert subsquare index to (row, col)
 
-            for col in range(9):
-                if self.board[row][col] == 0:
-                    poss = self.possibilites(row, col)
+        Sample subsquare indices for a 3-board:
 
-                    p[row].append(poss)
-                else:
-                    p[row].append({self.board[row][col]})
+         0 | 1 | 2
+        --- --- ---
+         3 | 4 | 5
+        --- --- ---
+         6 | 7 | 8
+        """
+        subsquare_row_index = subsquare_index // self.n
+        subsquare_col_index = subsquare_index % self.n
 
-        self.allPossibilities = p
+        return subsquare_row_index, subsquare_col_index
 
-    def is_only_in_row(self, num, row):
-        """Is only in row"""
-        row = self.get_row(row, self.allPossibilities)
 
-        for i in range(8):
-            for j in range(i + 1, 9):
-                if num in row[i] and num in row[j]:
-                    return False
-
-        return True
-
-    def is_only_in_col(self, num, col):
-        """Is only in col"""
-        col = self.get_col(col, self.allPossibilities)
-
-        for i in range(8):
-            for j in range(i + 1, 9):
-                if num in col[i] and num in col[j]:
-                    return False
-
-        return True
-
-    def is_only_in_box(self, num, row, col):
-        """Is only in box"""
-        box = self.get_box(row, col, self.allPossibilities)
-
-        for i in range(8):
-            for j in range(i + 1, 9):
-                if num in box[i] and num in box[j]:
-                    return False
-
-        return True
-
-    def right_num(self, row, col):
-        """Right num"""
-        poss = self.allPossibilities[row][col]
-
-        for num in poss:
-            is_only_in_row = self.is_only_in_row(num, row)
-            is_only_in_col = self.is_only_in_col(num, col)
-            is_only_in_box = self.is_only_in_box(num, row, col)
-
-            if is_only_in_box or is_only_in_col or is_only_in_row:
-                return num
-            else:
-                continue
-
-        return 0
-
-    def solve_one_square(self):
-        """Solve one square"""
-        for row in range(9):
-            for col in range(9):
-                if self.board[row][col] != 0:
-                    continue
-
-                n = self.right_num(row, col)
-
-                if n > 0:
-                    self.board[row][col] = n
-                    self.generate_all_possibilities()
-                    print("Found: (", row, ",", col, ") =", n)
-
-                    return True
-                else:
-                    continue
-        # no immediately available squares, must guess
-        return False
-
-    def solve(self):
-        """Solve!"""
-        finished = False
-
-        print("Current Board:")
-        self.print_board()
-
-        if self.is_completed():
-            finished = True
-
-        while not finished:
-            found = self.solve_one_square()
-
-            finished = not found
-
-        if self.isCompleted():
-            print("Board is Completed")
-            return True
-
-        if self.uncompletable():
-            print("Board Uncompletable")
-            self.print_board()
-            return False
-
-        # returns true if found
-        return self.iterateThroughGuesses()
-
-    def is_filled_out(self):
-        """Is filled out"""
-        # check if any 0's left
-
-        has_zeros = 0 in set([item for sublist in self.board for item in sublist])
-
-        if has_zeros:
-            return False
-
-        return True
-
-    def is_valid(self):
-        """Is valid"""
-        for i in range(9):
-            row = self.get_row(i, self.board)
-            col = self.get_col(i, self.board)
-
-            b_row = i // 3
-            b_col = i - (b_row * 3)
-
-            box = self.get_box(b_row * 3, b_col * 3, self.board)
-
-            row_is_valid = len(row) == len(set(row))
-            col_is_valid = len(col) == len(set(col))
-            box_is_valid = len(box) == len(set(box))
-
-            if row_is_valid and col_is_valid and box_is_valid:
-                continue
-            else:
-                return False
-
-        return True
-
-    def is_completed(self):
-        """Is completed"""
-        return self.is_valid() and self.is_filled_out()
-
-    def uncompletable(self):
-        """Uncompletable"""
-        l = [item for sublist in self.allPossibilities for item in sublist]
-
-        for item in l:
-            if len(item) == 0:
-                print(item)
-                return True
-
-        if self.is_filled_out() and not self.is_valid():
-            return True
-
-        return False
-
-    def iterate_through_guesses(self):
-        """Iterate through guesses"""
-        min_row, min_col = 0, 0
-        min_len = 9
-
-        for row in range(9):
-            for col in range(9):
-                l = len(self.allPossibilities[row][col])
-
-                if l < min_len and l != 1:
-                    min_len = len(self.allPossibilities[row][col])
-                    min_row, min_col = row, col
-
-        poss = self.allPossibilities[min_row][min_col]
-
-        for n in poss:
-            print("Guessing:", n, " at ", "(", min_row, ",", min_col, ")")
-            print("All guesses for this square:", poss)
-            new_board = Board(copy.deepcopy(self.board))
-
-            new_board.board[min_row][min_col] = n
-            new_board.generate_all_possibilities()
-
-            found = new_board.solve()
-
-            if found:
-                if new_board.is_completed():
-                    new_board.print_board()
-
-                return True
-
-        return False
