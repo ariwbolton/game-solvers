@@ -1,6 +1,5 @@
 """Group class module"""
 
-from .cell import Cell
 
 class Group:
     """Record a set of items, and sort appropriately"""
@@ -29,7 +28,7 @@ class Group:
     @property
     def constraints(self):
         """If this is a Group of Cells, get all constraints that apply to all cells. Otherwise, throw."""
-        if len(self.items_sorted) > 0 and not isinstance(self.items_sorted[0], Cell):
+        if len(self.items_sorted) > 0 and isinstance(self.items_sorted[0], int):
             raise Exception(f"Attempting to access constraints of a Group that does not refer to cells: {self}")
 
         constraint_set_list = []

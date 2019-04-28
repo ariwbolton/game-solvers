@@ -1,5 +1,6 @@
 """Cell class module"""
 
+from .graph import Edge
 
 class Cell:
     """Records the coordinates of a cell, and other utility methods."""
@@ -18,6 +19,10 @@ class Cell:
     def value(self):
         """Get value for this cell"""
         return self.board.values[self.row][self.col]
+
+    def can_contain(self, number):
+        """Determine if this cell can contain a number"""
+        return self.board.graph.edge_exists(Edge(self, number))
 
     def register_constraint(self, constraint):
         """Register a constraint"""

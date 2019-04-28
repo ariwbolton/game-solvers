@@ -198,11 +198,7 @@ class Board:
     # SOLVE
 
     def solve(self):
-        """Solve this sudoku!
-
-        First, we know that all cells that have a number in them can trigger graph updates for all related constraints
-        Graph updates can
-        """
+        """Solve this sudoku!"""
         tasks = queue.Queue()
         task_set = set()
 
@@ -218,11 +214,17 @@ class Board:
             constraint = tasks.get()
             task_set.remove(constraint)
 
+            print('Updating', constraint)
             additional_tasks = constraint.enforce()
 
-            for constraint in additional_tasks:
-                if constraint not in task_set:
-                    tasks.put(constraint)
-                    task_set.add(constraint)
+            nonexistant_additional_tasks = [task for task in additional_tasks if task not in task_set]
 
-        return None
+            print("additional tasks", nonexistant_additional_tasks)
+
+            for task in nonexistant_additional_tasks:
+                tasks.put(task)
+                task_set.add(task)
+
+        self.print_board()
+
+        return self

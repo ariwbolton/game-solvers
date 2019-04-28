@@ -56,6 +56,10 @@ class Graph:
             else:
                 self.edges[cell] = Group([cell.value])
 
+    def edge_exists(self, edge):
+        """Determine if this edge exists"""
+        return edge.number in self.edges[edge.cell]
+
     def remove_edge(self, edge):
         """Remove an edge from the graph"""
         return self.remove_edges([edge])
@@ -78,7 +82,6 @@ class Graph:
                 print("Attempting to remove duplicate edge", edge, 'skipping...')
                 continue
 
-            print(f"Removing edge {edge}")
             removed_edge_set.add(edge)
 
             # Remove the edge
@@ -90,14 +93,17 @@ class Graph:
 
             if len(self.edges[cell]) == 1:
                 print("Cell identified!", cell, self.edges[cell][0])
+                self.board.values[cell.row][cell.col] = self.edges[cell][0]
 
             for constraint in cell.constraints:
                 if constraint not in constraints_to_update:
                     constraints_to_update.add(constraint)
                     constraint_list.append(constraint)
 
+        sorted_constraints = sorted(constraint_list)
+
         # Update constraints
-        for constraint in constraint_list:
+        for constraint in sorted_constraints:
             constraint.update()
 
-        return constraint_list
+        return sorted_constraints

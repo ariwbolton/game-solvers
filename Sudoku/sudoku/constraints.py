@@ -14,6 +14,11 @@ class Constraint:
 
     #: Type of constraint
     subclass = None
+    subclass_order = {
+        'row': 0,
+        'col': 1,
+        'region': 2
+    }
 
     def __init__(self, board, index):
         self.board = board
@@ -43,6 +48,9 @@ class Constraint:
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.index})'
+
+    def __lt__(self, other):
+        return (Constraint.subclass_order[self.subclass], self.cells) < (Constraint.subclass_order[other.subclass], other.cells)
 
     def numbers(self):
         """Get currently inputted values for this constraint"""
@@ -105,53 +113,48 @@ class Constraint:
         """Update the graph using this constraint.
 
         Returns a list of constraints that should be re-checked"""
-        # TODO: Re-evaluate if this works, at all
         cell_group_options = self.cell_group_options
         number_group_options = self.number_group_options
 
-        print(cell_group_options)
-        print(number_group_options)
-
         affected_cell_set = set()
         removals = set()
-
-        print('Updating', self)
 
         for cell_group, number_group in cell_group_options.items():
             if len(cell_group) == len(number_group):
                 # Numbers cannot appear anywhere else. Must trigger removal of those possibilities
                 other_cells = sorted(self.cell_set - cell_group.items)
-                print(cell_group, 'must contain only', number_group, '. Removing', number_group, 'from', other_cells)
+                # print(cell_group, 'must contain only', number_group, '. Removing', number_group, 'from', other_cells)
 
                 for cell in other_cells:
-                    affected_cell_set.add(cell)
-
                     for number in number_group:
-                        removals.add(Edge(cell, number))
+                        if cell.can_contain(number):
+                            affected_cell_set.add(cell)
+                            removals.add(Edge(cell, number))
 
         for number_group, cell_group in number_group_options.items():
             if len(number_group) == len(cell_group):
                 # These cells cannot contain any other numbers
                 other_numbers = sorted(self.board.number_set - number_group.items)
-                print(number_group, 'can only be in', cell_group, '. Removing', other_numbers, 'from', cell_group)
+                # print(number_group, 'can only be in', cell_group, '. Removing', other_numbers, 'from', cell_group)
 
                 for cell in cell_group:
-                    affected_cell_set.add(cell)
-
                     for number in other_numbers:
-                        removals.add(Edge(cell, number))
+                        if cell.can_contain(number):
+                            affected_cell_set.add(cell)
+                            removals.add(Edge(cell, number))
 
         # Execute updates
-        self.board.graph.remove_edges(sorted(removals))
+        sorted_removals = sorted(removals)
+        affected_constraints = self.board.graph.remove_edges(sorted_removals)
 
         # Generate constraints that should be re-checked
-        constraints = set()
+        # constraints = set()
+        #
+        # for cell in affected_cell_set:
+        #     for constraint in cell.constraints:
+        #         constraints.add(constraint)
 
-        for cell in affected_cell_set:
-            for constraint in cell.constraints:
-                constraints.add(constraint)
-
-        return constraints
+        return affected_constraints
 
 
 class RowConstraint(Constraint):
