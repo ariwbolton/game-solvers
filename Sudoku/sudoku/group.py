@@ -55,3 +55,6 @@ class Group:
 
     def __contains__(self, item):
         return item in self.items
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)

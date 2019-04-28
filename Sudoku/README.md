@@ -40,8 +40,15 @@ If at any point, a cell has only one option, fill that cell in with that option,
     1. For each "number", maintain the list of cells that it can be in, under that constraint
     1. For each "cell" in that constraint, maintain the list of "numbers" that can be in it
     1. Define "rules" for that constraint as follows:
-        1. If N cells can each only contain the same N numbers, then those numbers cannot be in any other cells
-        1. If N numbers can each only be in the same N cells, then those cells cannot contain any other numbers
+        1. If M cells can each only contain the same N numbers (N == M)
+            1. CantContain(~CellGroup(C1, ..., CM), NumberGroup(N1, ..., NN))
+        1. If N numbers can each only be in the same M cells (N < M)
+            1. CantContain(~CellGroup(C1, ..., CM), NumberGroup(N1, ..., NN))
+        1. If N numbers can each only be in the same M cells (N == M)
+            1. CantContain(~CellGroup(C1, ..., CM), NumberGroup(N1, ..., NN))
+            1. CantContain(CellGroup(C1, ..., CM), ~NumberGroup(N1, ..., NN))
+        1. CantContains imply that the cell group must not contain the number group
+            1. `~` means "complement the cell group"
     1. So, need to maintain "inverse" mappings:
         1. From "cell groups" to a list of numbers
         1. From "number group" to a list of cells

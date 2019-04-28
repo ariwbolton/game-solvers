@@ -37,6 +37,9 @@ class Edge:
     def __lt__(self, other):
         return self.tup < other.tup
 
+    def __eq__(self, other):
+        return self.tup == other.tup
+
 
 class Graph:
     """Graph class

@@ -122,26 +122,44 @@ class Constraint:
         for cell_group, number_group in cell_group_options.items():
             if len(cell_group) == len(number_group):
                 # Numbers cannot appear anywhere else. Must trigger removal of those possibilities
-                other_cells = sorted(self.cell_set - cell_group.items)
-                # print(cell_group, 'must contain only', number_group, '. Removing', number_group, 'from', other_cells)
+                relevant_constraints = Cell.constraint_intersection(cell_group)
 
-                for cell in other_cells:
-                    for number in number_group:
-                        if cell.can_contain(number):
-                            affected_cell_set.add(cell)
-                            removals.add(Edge(cell, number))
+                for constraint in relevant_constraints:
+                    other_cells = sorted(constraint.cell_set - cell_group.items)
+                    # print(f"{other_cells} can't contain {number_group}. Removing!)
+
+                    for cell in other_cells:
+                        for number in number_group:
+                            if cell.can_contain(number):
+                                affected_cell_set.add(cell)
+                                removals.add(Edge(cell, number))
 
         for number_group, cell_group in number_group_options.items():
-            if len(number_group) == len(cell_group):
-                # These cells cannot contain any other numbers
-                other_numbers = sorted(self.board.number_set - number_group.items)
-                # print(number_group, 'can only be in', cell_group, '. Removing', other_numbers, 'from', cell_group)
+            if len(number_group) <= len(cell_group):
+                relevant_constraints = Cell.constraint_intersection(cell_group)
 
-                for cell in cell_group:
-                    for number in other_numbers:
-                        if cell.can_contain(number):
-                            affected_cell_set.add(cell)
-                            removals.add(Edge(cell, number))
+                for constraint in relevant_constraints:
+                    other_cells = sorted(constraint.cell_set - cell_group.items)
+                    # Other cells cannot contain these numbers
+                    # print(f"{other_cells} can't contain {number_group}. Removing!)
+
+                    for cell in other_cells:
+                        for number in number_group:
+                            if cell.can_contain(number):
+                                affected_cell_set.add(cell)
+                                removals.add(Edge(cell, number))
+
+                if len(number_group) == len(cell_group):
+                    # These cells cannot contain any other numbers
+                    other_numbers = sorted(self.board.number_set - number_group.items)
+
+                    # print(f"{other_cells} can't contain {other_numbers}. Removing!)
+
+                    for cell in cell_group:
+                        for number in other_numbers:
+                            if cell.can_contain(number):
+                                affected_cell_set.add(cell)
+                                removals.add(Edge(cell, number))
 
         # Execute updates
         sorted_removals = sorted(removals)

@@ -10,10 +10,10 @@ from sudoku import Board
 # evil
 # evil2
 
-easy = Board.from_sample('evil')
+sample_board = Board.from_sample('evil2')
 
-easy.print_board()
-easy.solve()
+sample_board.print_board()
+sample_board.solve()
 
 
 

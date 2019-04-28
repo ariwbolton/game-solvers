@@ -57,23 +57,6 @@ class Board:
             'regions': [RegionConstraint(self, index) for index in range(0, self.n2)]
         }
 
-        # Add constraints to cells -- NOW DONE BY CONSTRAINT CONSTRUCTORS
-        # for row_index, col_index in itertools.product(range(0, self.n2), range(0, self.n2)):
-        #     cell = self.cell(row_index, col_index)
-        #
-        #     row_constraint = self.constraints['rows'][row_index]
-        #     col_constraint = self.constraints['cols'][col_index]
-        #
-        #     region_row_index = row_index // self.n
-        #     region_col_index = col_index // self.n
-        #
-        #     region_index = (region_row_index * self.n) + region_col_index
-        #
-        #     region_constraint = self.constraints['regions'][region_index]
-        #
-        #     for constraint in [row_constraint, col_constraint, region_constraint]:
-        #         cell.register_constraint(constraint)
-
     @staticmethod
     def from_sample(name):
         """Factory method to create from name of sample board"""
@@ -143,6 +126,13 @@ class Board:
 
         print(*string_board_list, sep='\n')
 
+    def print_options(self):
+        """Print debug info regarding options per cell"""
+        print('---')
+        for cell in sorted(list(self.graph.edges.keys())):
+            print(f'{cell}: {self.graph.edges[cell]}')
+        print('---')
+
     # Getters
 
     def row(self, i):
@@ -189,6 +179,11 @@ class Board:
         """Get an iterable of all cells"""
         return itertools.chain.from_iterable(self.cells)
 
+    @property
+    def solved(self):
+        """Return whether or not the board is solved"""
+        return all(cell.value is not None for cell in self.all_cells)
+
     # Setters
 
     def set_value(self, row, col, val):
@@ -226,5 +221,10 @@ class Board:
                 task_set.add(task)
 
         self.print_board()
+
+        if self.solved:
+            print("Success!")
+        else:
+            print("Unsolved.")
 
         return self

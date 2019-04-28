@@ -2,6 +2,7 @@
 
 from .graph import Edge
 
+
 class Cell:
     """Records the coordinates of a cell, and other utility methods."""
 
@@ -35,6 +36,17 @@ class Cell:
     def constraint(self, subclass):
         """Get a single constraint"""
         return self.constraints_map[subclass]
+
+    @property
+    def constraint_set(self):
+        """Set of all constraints for this cell"""
+        return set(self.constraints)
+
+    @staticmethod
+    def constraint_intersection(cell_group):
+        """All constraints that contain these cells"""
+        return set.intersection(*[cell.constraint_set for cell in cell_group])
+
 
     def __hash__(self):
         """Simply return coordinates for hashing"""
