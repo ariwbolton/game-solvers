@@ -1,5 +1,4 @@
-"""Sudoku Solver"""
-from .board import Board
+"""Sample boards"""
 
 solved = [
 	[2,9,6, 3,1,8, 5,7,4],
@@ -15,7 +14,7 @@ solved = [
 	[3,4,2, 1,8,9, 7,6,5],
 ]
 
-easyUnsolved = [
+easy = [
 	[0,2,0, 1,7,8, 0,3,0],
 	[0,4,0, 3,0,2, 0,9,0],
 	[1,0,0, 0,0,0, 0,0,6],
@@ -29,7 +28,7 @@ easyUnsolved = [
 	[0,1,0, 4,3,6, 0,5,0],
 ]
 
-mediumUnsolved = [
+medium = [
 	[1,0,0, 0,0,5, 0,0,4],
 	[0,2,3, 4,0,6, 0,5,0],
 	[0,0,0, 0,0,0, 0,6,0],
@@ -43,7 +42,7 @@ mediumUnsolved = [
 	[2,0,0, 8,0,0, 0,0,7],
 ]
 
-hardUnsolved = [
+hard = [
 	[0,0,4, 0,0,5, 7,0,0],
 	[0,0,0, 0,0,9, 4,0,0],
 	[3,6,0, 0,0,0, 0,0,8],
@@ -57,7 +56,7 @@ hardUnsolved = [
 	[0,0,6, 1,0,0, 9,0,0],
 ]
 
-evilUnsolved = [
+evil = [
 	[0,0,3, 0,0,0, 0,0,1],
 	[0,0,0, 7,6,0, 4,0,0],
 	[5,0,0, 0,0,2, 0,9,0],
@@ -71,7 +70,7 @@ evilUnsolved = [
 	[8,0,0, 0,0,0, 2,0,0],
 ]
 
-evilUnsolved2 = [
+evil2 = [
 	[0,0,7, 5,0,0, 0,0,3],
 	[0,1,0, 0,3,0, 0,4,0],
 	[9,0,0, 0,0,2, 7,0,0],
@@ -84,19 +83,3 @@ evilUnsolved2 = [
 	[0,5,0, 0,1,0, 0,9,0],
 	[2,0,0, 0,0,4, 8,0,0],
 ]
-
-sol = Board(solved)
-easy = Board(easyUnsolved)
-medium = Board(mediumUnsolved)
-hard = Board(hardUnsolved)
-evil = Board(evilUnsolved)
-evil2 = Board(evilUnsolved2)
-
-random = Board()
-
-random.print_board()
-
-
-
-
-

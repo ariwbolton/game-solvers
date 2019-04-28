@@ -60,8 +60,18 @@ If at any point, a cell has only one option, fill that cell in with that option,
             1. Should check if that cell group or number group has a small enough number of corresponding values
             
             
-number_map          = [number   : [cell]]
 cell_map            = [cell     : [number]]
 cell_group_map      = [[cell]   : [number]]     # Used by rules
+number_map          = [number   : [cell]]
 number_group_map    = [[number] : [cell]]       # Used by rules
+
+
+1. Cell_group_map and number_group_map should use the same "group_by" method, and should parallel their single-key counterparts (cell_map, number_map)
+1. Cells should be able to access constraints directly
+    1. `.constraint()`
+    1. `.constraints`
+1. Can likely get rid of conversion methods between row/col information on board
+1. Instead of passing around (row, col) for a "cell", should instead pass the cell directly
+1. "Group" should be a subclass of "set" (??? maybe not)
+1. Graph should have an interface to handle updates
         
