@@ -36,6 +36,7 @@ class WikipediaAPI:
     ########
 
     def query_simple(self, *, pageids: list[int], prop: list[str] | str, format: str = 'json') -> dict:
+        # TODO: Paginate through responses
         r = requests.get(WIKIPEDIA_API_URL, params={
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
@@ -48,6 +49,7 @@ class WikipediaAPI:
         return r.json()
 
     def query_generator(self, *, pageids: list[int], generator: str, prop: str, format: str = 'json') -> dict:
+        # TODO: Paginate through responses
         r = requests.get(WIKIPEDIA_API_URL, params={
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
