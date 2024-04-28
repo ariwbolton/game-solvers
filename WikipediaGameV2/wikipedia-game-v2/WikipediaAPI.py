@@ -12,6 +12,11 @@ WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 
 class WikipediaAPI:
 
+    def __init__(self):
+        self._headers = {
+            'User-Agent': 'Ari Bolton\'s Wikipedia game solver (ariwbolton@gmail.com)'
+        }
+
     ########
     # Core #
     ########
@@ -23,8 +28,8 @@ class WikipediaAPI:
             "prop": "|".join(prop) if isinstance(prop, list) else prop,
             "format": format,
             "pllimit": "max",
-            "hllimit": "max"
-        })
+            "lhlimit": "max"
+        }, headers=self._headers)
 
         return r.json()
 
@@ -36,6 +41,6 @@ class WikipediaAPI:
             "prop": prop,
             "format": format,
             "gpllimit": "max",
-        })
+        }, headers=self._headers)
 
         return r.json()
