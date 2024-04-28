@@ -1,4 +1,9 @@
+import os
+
 import requests
+import requests_cache
+
+from wikipedia_game_v2.constants import DATA_DIR
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 
@@ -13,9 +18,14 @@ WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 class WikipediaAPI:
 
     def __init__(self):
-        self._headers = {
-            'User-Agent': 'Ari Bolton\'s Wikipedia game solver (ariwbolton@gmail.com)'
-        }
+        self._session = requests_cache.CachedSession(
+            os.path.join(DATA_DIR, 'http_cache'),
+            backend='filesystem',
+            expire_after=requests_cache.NEVER_EXPIRE,
+            headers={
+                'User-Agent': 'Ari Bolton\'s Wikipedia game solver (ariwbolton@gmail.com)'
+            }
+        )
 
     ########
     # Core #
@@ -29,7 +39,7 @@ class WikipediaAPI:
             "format": format,
             "pllimit": "max",
             "lhlimit": "max"
-        }, headers=self._headers)
+        })
 
         return r.json()
 
@@ -41,6 +51,6 @@ class WikipediaAPI:
             "prop": prop,
             "format": format,
             "gpllimit": "max",
-        }, headers=self._headers)
+        })
 
         return r.json()
