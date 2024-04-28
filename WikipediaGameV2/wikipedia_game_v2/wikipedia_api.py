@@ -16,6 +16,10 @@ WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 # https://en.wikipedia.org/w/api.php?action=query&generator=links&pageids=12345&gpllimit=max&prop=info&format=json
 
 class WikipediaAPI:
+    """Cached Wikipedia API wrapper
+
+    Stores request responses indefinitely, because this is just a toy project and doesn't need to be up-to-date
+    """
 
     def __init__(self):
         self._session = requests_cache.CachedSession(

@@ -1,6 +1,6 @@
 import unittest
 
-from wikipedia_game_v2.WikipediaAPI import WikipediaAPI
+from wikipedia_game_v2.wikipedia_api import WikipediaAPI
 
 
 class TestWikipediaAPI(unittest.TestCase):
