@@ -6,11 +6,14 @@ class Graph:
     """Each node is a page, and edges are links"""
 
     def __init__(self, page_loader: PageLoader):
-        self.pages: list[Page] = []
+        self._pages: list[Page] = []
         self.page_loader = page_loader
 
     def page(self, *, pageid: int, name: str) -> Page:
         """Returns a Page object. Fetches first, if needed, using page_fetcher."""
+        pass
+
+    def pages(self, *, pageids: list[int]) -> list[Page]:
         pass
 
 
