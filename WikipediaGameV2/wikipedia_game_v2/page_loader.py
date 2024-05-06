@@ -35,14 +35,19 @@ class PageLoader:
 
         return [pages_by_id[pageid] for pageid in pageids]
 
-    def fetch_remote_pages(self, pageids: Iterable[int]) -> list[Page]:
+    def fetch_remote_pages(self, pageids: list[int] | set[int]) -> list[Page]:
         """Fetches pages directly from Wikipedia, with no knowledge of the cache at all
 
         Can handle a long list; uses concurrency
         """
+        if not pageids:
+            return []
+
         pages: list[Page] = []
 
         # TODO: add concurrency
+
+        print(f"Fetching {len(pageids)} pages")
 
         # Wikipedia API only supports 50 pageids at a time
         for pageid_chunk in chunk(list(pageids), size=50):

@@ -17,3 +17,6 @@ class Page:
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)
+
+    def __repr__(self) -> str:
+        return f"Page(id={self.id}, name={self.name}, links={len(self.links) if self.links else None}, backlinks={len(self.backlinks) if self.backlinks else None})"
