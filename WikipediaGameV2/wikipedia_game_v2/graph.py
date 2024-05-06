@@ -10,7 +10,7 @@ class Graph:
         self.page_loader = page_loader
 
     def page(self, *, pageid: int, name: str) -> Page:
-        """Returns a Page object. Fetches first, if needed, using page_fetcher."""
+        """Returns a Page object. Fetches first, if needed, using page_loader."""
         pass
 
     def pages(self, *, pageids: list[int]) -> list[Page]:

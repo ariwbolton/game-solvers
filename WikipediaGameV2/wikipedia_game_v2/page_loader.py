@@ -42,7 +42,7 @@ class PageLoader:
         """
         pages: list[Page] = []
 
-        # TODO: add concurrence
+        # TODO: add concurrency
 
         # Wikipedia API only supports 50 pageids at a time
         for pageid_chunk in chunk(list(pageids), size=50):
@@ -51,6 +51,8 @@ class PageLoader:
             pageids_by_link_name = {}
 
             page_chunk: list[Page] = []
+
+            # TODO: Handle pagination
 
             for page_json in query_result["query"]["pages"].values():
                 if 'missing' in page_json:
@@ -72,6 +74,7 @@ class PageLoader:
             pages_by_id = key_by(page_chunk, lambda page: page.id)
 
             # Retrieves a mix of all links for the pageids passed in
+            # TODO: Handle pagination
             generator_result = self.wikipedia_api.query_generator(
                 pageids=list(pages_by_id.keys()),
                 prop='info',
