@@ -12,6 +12,8 @@ class PageLoader:
         self.wikipedia_api = WikipediaAPI()
         self.page_file_cache = PageFileCache()
 
+        self.page_file_cache.setup()
+
     def load_pages(self, *, pageids: list[int]) -> list[Page]:
         """Load pages either from the cache or from Wikipedia, caching new entries along the way
 
@@ -57,9 +59,7 @@ class PageLoader:
 
             page_chunk: list[Page] = []
 
-            # TODO: Handle pagination
-
-            for page_json in query_result["query"]["pages"].values():
+            for page_json in query_result.values():
                 if 'missing' in page_json:
                     continue
 
@@ -83,7 +83,7 @@ class PageLoader:
             generator_result = self.wikipedia_api.query_generator(
                 pageids=list(pages_by_id.keys()),
                 prop='info',
-                generator='link'
+                generator='links'
             )
 
             for link_json in generator_result["query"]["pages"].values():

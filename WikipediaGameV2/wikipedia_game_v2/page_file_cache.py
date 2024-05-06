@@ -9,6 +9,10 @@ class PageFileCache:
     def __init__(self):
         self.dir = os.path.join(DATA_DIR, 'page_cache')
 
+    def setup(self):
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
+
     def get(self, pageid: int) -> Page | None:
         filename = self.filename(pageid)
 
@@ -33,7 +37,7 @@ class PageFileCache:
 
         page_json = page.to_dict()
 
-        with open(filename, 'w') as f:
+        with open(filename, 'w+') as f:
             json.dump(page_json, f)
 
     def filename(self, pageid: int) -> str:

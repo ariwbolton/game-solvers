@@ -36,27 +36,74 @@ class WikipediaAPI:
     ########
 
     def query_simple(self, *, pageids: list[int], prop: list[str] | str, format: str = 'json') -> dict:
-        # TODO: Paginate through responses
-        r = requests.get(WIKIPEDIA_API_URL, params={
+        params = {
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
             "prop": "|".join(prop) if isinstance(prop, list) else prop,
             "format": format,
-            "pllimit": "max",
-            "lhlimit": "max"
-        })
 
-        return r.json()
+            # "prop links" parameters
+            "pllimit": "max",
+            "plnamespace": '0|4',  # limit to "Main" and "Wikipedia" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
+
+            # "links here" parameters
+            "lhlimit": "max",
+            "lhnamespace": '0|4',
+        }
+
+        r = requests.get(WIKIPEDIA_API_URL, params=params)
+
+        result = r.json()
+
+        full_query_pages = result['query']['pages']
+
+        while 'continue' in result:
+            print('continuing', result['continue'])
+            r = requests.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+
+            result = r.json()
+
+            result_pages = result['query']['pages']
+
+            for key in set(full_query_pages.keys()) | set(result_pages.keys()):
+                full_query_pages[key] = self._merge_page_results(full_query_pages.get(key, None), result_pages.get(key, None))
+
+        return full_query_pages
+
+
+    def _merge_page_results(self, a, b) -> dict:
+        if not a:
+            return b
+
+        if not b:
+            return a
+
+        return {
+            **a,
+            'links': a.get('links', []) + b.get('links', []),
+            'linkshere': a.get('linkshere', []) + b.get('linkshere', [])
+        }
 
     def query_generator(self, *, pageids: list[int], generator: str, prop: str, format: str = 'json') -> dict:
         # TODO: Paginate through responses
-        r = requests.get(WIKIPEDIA_API_URL, params={
+        params = {
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
             "generator": generator,
             "prop": prop,
             "format": format,
             "gpllimit": "max",
-        })
+        }
 
-        return r.json()
+        r = requests.get(WIKIPEDIA_API_URL, params=params)
+
+        result = r.json()
+
+        while 'continue' in result:
+            print('continuing generator', result['continue'])
+            r = requests.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+
+            result = r.json()
+
+            # TODO: Finish this
+
