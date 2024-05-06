@@ -1,12 +1,12 @@
 from typing import Literal
 
-from wikipedia_game_v2.graph import Graph
 from wikipedia_game_v2.page import Page
+from wikipedia_game_v2.page_loader import PageLoader
 
 
 class BFSInspectable:
-    def __init__(self, graph: Graph, *, start: Page, end: Page, direction: Literal["forward", "backward"], ):
-        self.graph = graph
+    def __init__(self, *, start: Page, end: Page, direction: Literal["forward", "backward"], page_loader: PageLoader):
+        self.page_loader = page_loader
         self.direction = direction
         self.start: Page = start
         self.end: Page = end
@@ -18,7 +18,7 @@ class BFSInspectable:
         if self.is_finished():
             raise Exception('Cannot step because BFS has already finished')
 
-        pages = self.graph.pages(pageids=list(self.current))
+        pages = self.page_loader.load_pages(pageids=list(self.current))
 
         self.current = set()
 

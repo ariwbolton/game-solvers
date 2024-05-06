@@ -1,10 +1,11 @@
 from wikipedia_game_v2.bfs_inspectable import BFSInspectable
-from wikipedia_game_v2.graph import Graph, Page
+from wikipedia_game_v2.page import Page
+from wikipedia_game_v2.page_loader import PageLoader
 
 
 class BFSDoubleSided:
-    def __init__(self, graph: Graph):
-        self.graph = graph
+    def __init__(self, page_loader: PageLoader):
+        self.page_loader = page_loader
 
     def search(self, start: Page, end: Page) -> list[Page] | None:
         """Iterate forward from the start, AND backwards from the end, using the less costly side at each step"""
@@ -14,8 +15,8 @@ class BFSDoubleSided:
         if end.id in start.links:
             return [start, end]
 
-        forward = BFSInspectable(self.graph, start=start, end=end, direction='forward')
-        backward = BFSInspectable(self.graph, start=end, end=start, direction='backward')
+        forward = BFSInspectable(start=start, end=end, direction='forward', page_loader=self.page_loader)
+        backward = BFSInspectable(start=end, end=start, direction='backward', page_loader=self.page_loader)
 
         step_count = 0
         forward_count = 0

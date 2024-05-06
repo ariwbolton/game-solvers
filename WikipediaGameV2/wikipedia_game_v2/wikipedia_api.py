@@ -51,14 +51,21 @@ class WikipediaAPI:
             "lhnamespace": '0|4',
         }
 
+        print('Fetching simple query')
+
         r = self._session.get(WIKIPEDIA_API_URL, params=params)
+
+        print(r.url)
 
         result = r.json()
 
         full_query_pages = result['query']['pages']
 
         while 'continue' in result:
+            print('Paginating simple query')
             r = self._session.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+
+            print(r.url)
 
             result = r.json()
 
@@ -96,14 +103,21 @@ class WikipediaAPI:
             "gplnamespace": "0|4" # limit to "Main" and "Wikipedia" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
         }
 
+        print('Fetching links generator')
+
         r = self._session.get(WIKIPEDIA_API_URL, params=params)
+
+        print(r.url)
 
         result = r.json()
 
         all_links = result['query']['pages']
 
         while 'continue' in result:
+            print('Paginating links generator')
             r = self._session.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+
+            print(r.url)
 
             result = r.json()
 
