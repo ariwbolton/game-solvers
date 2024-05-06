@@ -79,14 +79,12 @@ class PageLoader:
             pages_by_id = key_by(page_chunk, lambda page: page.id)
 
             # Retrieves a mix of all links for the pageids passed in
-            # TODO: Handle pagination
-            generator_result = self.wikipedia_api.query_generator(
+            generator_result = self.wikipedia_api.query_links_generator(
                 pageids=list(pages_by_id.keys()),
                 prop='info',
-                generator='links'
             )
 
-            for link_json in generator_result["query"]["pages"].values():
+            for link_json in generator_result.values():
                 if 'missing' in link_json:
                     continue
 

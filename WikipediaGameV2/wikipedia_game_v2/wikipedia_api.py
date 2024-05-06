@@ -51,15 +51,14 @@ class WikipediaAPI:
             "lhnamespace": '0|4',
         }
 
-        r = requests.get(WIKIPEDIA_API_URL, params=params)
+        r = self._session.get(WIKIPEDIA_API_URL, params=params)
 
         result = r.json()
 
         full_query_pages = result['query']['pages']
 
         while 'continue' in result:
-            print('continuing', result['continue'])
-            r = requests.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+            r = self._session.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
 
             result = r.json()
 
@@ -84,26 +83,31 @@ class WikipediaAPI:
             'linkshere': a.get('linkshere', []) + b.get('linkshere', [])
         }
 
-    def query_generator(self, *, pageids: list[int], generator: str, prop: str, format: str = 'json') -> dict:
-        # TODO: Paginate through responses
+    def query_links_generator(self, *, pageids: list[int], prop: str, format: str = 'json') -> dict:
         params = {
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
-            "generator": generator,
+            "generator": 'links',
             "prop": prop,
             "format": format,
+
+            # "prop links" parameters
             "gpllimit": "max",
+            "gplnamespace": "0|4" # limit to "Main" and "Wikipedia" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
         }
 
-        r = requests.get(WIKIPEDIA_API_URL, params=params)
+        r = self._session.get(WIKIPEDIA_API_URL, params=params)
 
         result = r.json()
 
+        all_links = result['query']['pages']
+
         while 'continue' in result:
-            print('continuing generator', result['continue'])
-            r = requests.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+            r = self._session.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
 
             result = r.json()
 
-            # TODO: Finish this
+            all_links.update(result['query']['pages'])
+
+        return all_links
 
