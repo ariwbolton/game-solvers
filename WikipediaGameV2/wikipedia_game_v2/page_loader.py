@@ -8,13 +8,13 @@ from wikipedia_game_v2.wikipedia_api import WikipediaAPI
 
 
 class PageLoader:
-    def __init__(self):
-        self.wikipedia_api = WikipediaAPI()
+    def __init__(self, wikipedia_api: WikipediaAPI):
+        self.wikipedia_api = wikipedia_api
         self.page_file_cache = PageFileCache()
 
         self.page_file_cache.setup()
 
-    def load_pages(self, *, pageids: list[int]) -> list[Page]:
+    async def load_pages(self, *, pageids: list[int]) -> list[Page]:
         """Load pages either from the cache or from Wikipedia, caching new entries along the way
 
         Handles batching the search; callers don't need to worry about that
@@ -27,8 +27,10 @@ class PageLoader:
 
         all_fetched_pages: list[Page] = []
 
+        # TODO: Add concurrency
+
         for missing_pageid_chunk in chunk(list(missing_pageids), size=1):
-            fetched_pages = self.fetch_remote_pages(list(missing_pageid_chunk))
+            fetched_pages = await self.fetch_remote_pages(list(missing_pageid_chunk))
 
             for fetched_page in fetched_pages:
                 self.page_file_cache.store(fetched_page)
@@ -44,7 +46,7 @@ class PageLoader:
 
         return [pages_by_id[pageid] for pageid in pageids]
 
-    def fetch_remote_pages(self, pageids: list[int]) -> list[Page]:
+    async def fetch_remote_pages(self, pageids: list[int]) -> list[Page]:
         """Fetches pages directly from Wikipedia, with no knowledge of the cache at all
 
         Can handle a long list; uses concurrency
@@ -60,7 +62,7 @@ class PageLoader:
 
         print(f"Fetching {len(pageids)} pages")
 
-        query_result = self.wikipedia_api.query_simple(pageids=pageids, prop=['links', 'linkshere'])
+        query_result = await self.wikipedia_api.query_simple(pageids=pageids, prop=['links', 'linkshere'])
 
         pageids_by_link_name = {}
         pages: list[Page] = []
@@ -85,7 +87,7 @@ class PageLoader:
         pages_by_id = key_by(pages, lambda page: page.id)
 
         # Retrieves a mix of all links for the pageids passed in
-        generator_result = self.wikipedia_api.query_links_generator(
+        generator_result = await self.wikipedia_api.query_links_generator(
             pageids=list(pages_by_id.keys()),
             prop='info',
         )

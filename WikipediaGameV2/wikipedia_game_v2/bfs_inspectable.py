@@ -14,11 +14,11 @@ class BFSInspectable:
         self.seen = set(self.current)
         self.prevs = {link: self.start.id for link in self.current}
 
-    def step(self):
+    async def step(self):
         if self.is_finished():
             raise Exception('Cannot step because BFS has already finished')
 
-        pages = self.page_loader.load_pages(pageids=list(self.current))
+        pages = await self.page_loader.load_pages(pageids=list(self.current))
 
         self.current = set()
 

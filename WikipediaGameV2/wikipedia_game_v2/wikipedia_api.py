@@ -1,5 +1,6 @@
 import os
 
+import httpx
 import requests
 import requests_cache
 
@@ -21,21 +22,20 @@ class WikipediaAPI:
     Stores request responses indefinitely, because this is just a toy project and doesn't need to be up-to-date
     """
 
-    def __init__(self):
-        self._session = requests_cache.CachedSession(
-            os.path.join(DATA_DIR, 'http_cache'),
-            backend='filesystem',
-            expire_after=requests_cache.NEVER_EXPIRE,
-            headers={
-                'User-Agent': 'Ari Bolton\'s Wikipedia game solver (ariwbolton@gmail.com)'
-            }
-        )
+    client: httpx.AsyncClient = None
+
+    def __init__(self, client: httpx.AsyncClient):
+        self.client = client
+
+        self.client.headers = {
+            'User-Agent': 'Ari Bolton\'s Wikipedia game solver (ariwbolton@gmail.com)'
+        }
 
     ########
     # Core #
     ########
 
-    def query_simple(self, *, pageids: list[int], prop: list[str] | str, format: str = 'json') -> dict:
+    async def query_simple(self, *, pageids: list[int], prop: list[str] | str, format: str = 'json') -> dict:
         params = {
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
@@ -53,7 +53,7 @@ class WikipediaAPI:
 
         print('Fetching simple query')
 
-        r = self._session.get(WIKIPEDIA_API_URL, params=params)
+        r = await self.client.get(WIKIPEDIA_API_URL, params=params)
 
         print(r.url)
 
@@ -63,7 +63,7 @@ class WikipediaAPI:
 
         while 'continue' in result:
             print('Paginating simple query')
-            r = self._session.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+            r = await self.client.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
 
             print(r.url)
 
@@ -90,7 +90,7 @@ class WikipediaAPI:
             'linkshere': a.get('linkshere', []) + b.get('linkshere', [])
         }
 
-    def query_links_generator(self, *, pageids: list[int], prop: str, format: str = 'json') -> dict:
+    async def query_links_generator(self, *, pageids: list[int], prop: str, format: str = 'json') -> dict:
         params = {
             "action": "query",
             "pageids": "|".join(str(pageid) for pageid in pageids),
@@ -105,7 +105,7 @@ class WikipediaAPI:
 
         print('Fetching links generator')
 
-        r = self._session.get(WIKIPEDIA_API_URL, params=params)
+        r = await self.client.get(WIKIPEDIA_API_URL, params=params)
 
         print(r.url)
 
@@ -115,7 +115,7 @@ class WikipediaAPI:
 
         while 'continue' in result:
             print('Paginating links generator')
-            r = self._session.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
+            r = await self.client.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
 
             print(r.url)
 

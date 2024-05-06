@@ -7,7 +7,7 @@ class BFSDoubleSided:
     def __init__(self, page_loader: PageLoader):
         self.page_loader = page_loader
 
-    def search(self, start: Page, end: Page) -> list[Page] | None:
+    async def search(self, start: Page, end: Page) -> list[Page] | None:
         """Iterate forward from the start, AND backwards from the end, using the less costly side at each step"""
         if start.id == end.id:
             return [start]
@@ -32,11 +32,11 @@ class BFSDoubleSided:
             if len(forward.current) <= len(backward.current):
                 print('Stepping forwards...')
                 forward_count += 1
-                forward.step()
+                await forward.step()
             else:
                 print('Stepping backwards...')
                 backward_count += 1
-                backward.step()
+                await backward.step()
 
             print('')
 
@@ -49,4 +49,4 @@ class BFSDoubleSided:
 
         path = forward.path(pivot)[:-1] + [pivot] + list(reversed(backward.path(pivot)[:-1]))
 
-        return self.graph.pages(pageids=path)
+        return await self.page_loader.load_pages(pageids=path)
