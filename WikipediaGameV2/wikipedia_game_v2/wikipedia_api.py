@@ -1,5 +1,4 @@
 import httpx
-from httpx import Response
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
@@ -11,6 +10,11 @@ WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 
 # Load rich links (which include both a pageid and name) for a list of pages
 # https://en.wikipedia.org/w/api.php?action=query&generator=links&pageids=12345&gpllimit=max&prop=info&format=json
+
+class PopularPageException(Exception):
+    def __init__(self, pageids: list[int]):
+        super().__init__("Popular pages with many backlinks detected")
+        self.pageids = pageids
 
 class WikipediaAPI:
     """Cached Wikipedia API wrapper
@@ -64,12 +68,19 @@ class WikipediaAPI:
         full_query_pages = result['query']['pages']
 
         while 'continue' in result:
-            result = await self._request({**params, **result['continue']})
+            result = await self._request({**params, **result['continue']}, diagnostics=True)
 
             result_pages = result['query']['pages']
 
             for key in set(full_query_pages.keys()) | set(result_pages.keys()):
                 full_query_pages[key] = self._merge_page_results(full_query_pages.get(key, None), result_pages.get(key, None))
+
+            # Some pages have a ridiculous number of backlinks, and will take far too long to finish
+            # Other strategies must be used to work around those missing backlinks
+            long_backlinks_results = [result for result in full_query_pages.values() if 'linkshere' in result and len(result["linkshere"]) > 10000]
+
+            if long_backlinks_results:
+                raise PopularPageException(pageids=[result["pageid"] for result in long_backlinks_results])
 
         return full_query_pages
 
@@ -113,10 +124,10 @@ class WikipediaAPI:
 
         return all_links
 
-    @retry(retry=retry_if_exception_type(httpx.ReadTimeout), stop=stop_after_attempt(10))
+    @retry(retry=retry_if_exception_type(httpx.ReadTimeout), stop=stop_after_attempt(5))
     async def _request(self, params, diagnostics=False) -> dict:
         try:
-            r = await self.client.get(WIKIPEDIA_API_URL, params=params, timeout=6.0)
+            r = await self.client.get(WIKIPEDIA_API_URL, params=params, timeout=15.0)
 
             if diagnostics:
                 print(r.elapsed, r.url)

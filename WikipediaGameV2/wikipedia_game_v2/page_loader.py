@@ -4,7 +4,7 @@ from pydash import chunk, key_by, compact
 
 from wikipedia_game_v2.page import Page
 from wikipedia_game_v2.page_file_cache import PageFileCache
-from wikipedia_game_v2.wikipedia_api import WikipediaAPI
+from wikipedia_game_v2.wikipedia_api import WikipediaAPI, PopularPageException
 
 
 class PageLoader:
@@ -57,10 +57,12 @@ class PageLoader:
 
         return [pages_by_id[pageid] for pageid in pageids]
 
-    async def fetch_remote_pages(self, pageids: list[int]) -> list[Page]:
+    async def fetch_remote_pages(self, pageids: list[int], popular=False) -> list[Page]:
         """Fetches pages directly from Wikipedia, with no knowledge of the cache at all
 
         Limited to 50 pages; wikipedia will only fetch that many at once
+
+        :param popular: If true, only fetch "links"; there are too many backlinks for these pages to fetch quickly
         """
         if not pageids:
             return []
@@ -71,7 +73,16 @@ class PageLoader:
 
         print(f"Fetching {len(pageids)} pages")
 
-        query_result = await self.wikipedia_api.query_simple(pageids=pageids, prop=['links', 'linkshere'])
+        try:
+            query_result = await self.wikipedia_api.query_simple(pageids=pageids, prop=['links', 'linkshere'] if not popular else ['links'])
+        except PopularPageException as e:
+            print('Got popular page exception!', e.pageids)
+            normal_page_ids = list(set(pageids) - set(e.pageids))
+
+            normal_pages = await self.fetch_remote_pages(normal_page_ids)
+            large_pages = await self.fetch_remote_pages(e.pageids, popular=True)
+
+            return normal_pages + large_pages
 
         pageids_by_link_name = {}
         pages: list[Page] = []
@@ -83,7 +94,9 @@ class PageLoader:
             page = Page(
                 id=page_json["pageid"],
                 name=page_json['title'],
-                backlinks=[bl["pageid"] for bl in page_json["linkshere"]],  # Backlinks have page ID already loaded
+                # Backlinks have page ID already loaded
+                # Popular pages have too many page links to load, so we just avoid that entirely
+                backlinks=[bl["pageid"] for bl in page_json["linkshere"]] if 'linkshere' in page_json else [],
                 links=[],  # Links don't have page ID loaded, and need to be joined with "generator" results, below
                 loaded=False
             )
