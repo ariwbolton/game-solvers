@@ -21,10 +21,7 @@ async def main(client: httpx.AsyncClient) -> None:
     page_loader = PageLoader(wikipedia_api)
     bfs = BFSDoubleSided(page_loader=page_loader)
 
-    stephen_curry_page_id = 5608488
-    uranium_page_id = 31743
-
-    start, end = await page_loader.load_pages(pageids=[stephen_curry_page_id, uranium_page_id])
+    start, end = await page_loader.load_pages_by_titles(titles=['Stephen Curry', 'Uranium'])
 
     print('Starting search!', start.name, '->', end.name)
 

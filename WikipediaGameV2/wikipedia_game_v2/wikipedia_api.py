@@ -31,22 +31,30 @@ class WikipediaAPI:
     # Core #
     ########
 
-    async def query_simple(self, *, pageids: list[int], prop: list[str] | str, format: str = 'json') -> dict:
+    async def query_simple(self, *, prop: list[str] | str, format: str = 'json', pageids: list[int] = None, titles: list[str] = None) -> dict:
         params = {
             "action": "query",
-            "pageids": "|".join(str(pageid) for pageid in pageids),
             "prop": "|".join(prop) if isinstance(prop, list) else prop,
             "format": format,
 
+            **({"pageids": "|".join(str(pageid) for pageid in pageids)} if pageids is not None else {}),
+            **({"titles": "|".join(titles)} if titles is not None else {}),
+
             # "prop links" parameters
-            "pllimit": "max",
-            "plnamespace": '0',  # limit to "Main" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
-            # Categories 4 and 14 were attempted, but had some pages with so many linkshere that it's impossible to load
-            # due to the API falling over
+            **({
+                # limit to "Main" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
+                "pllimit": "max",
+
+                # Categories 4 and 14 were attempted, but had some pages with so many linkshere that it's impossible to load
+                # due to the API falling over
+                "plnamespace": '0'
+            } if 'links' in prop else {}),
 
             # "links here" parameters
-            "lhlimit": "max",
-            "lhnamespace": '0',
+            **({
+                "lhlimit": "max",
+                "lhnamespace": '0'
+            } if 'linkshere' in prop else {}),
         }
 
         print('Fetching simple query')

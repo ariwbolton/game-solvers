@@ -1,5 +1,4 @@
 import asyncio
-from typing import Iterable
 
 from pydash import chunk, key_by, compact
 
@@ -116,3 +115,15 @@ class PageLoader:
             page.loaded = True
 
         return pages
+
+    async def load_pages_by_titles(self, titles: list[str]) -> list[Page]:
+        results = await self.wikipedia_api.query_simple(titles=titles, prop=['info'])
+
+        invalid_results = [result for result in results.values() if 'missing' in result]
+
+        if invalid_results:
+            raise Exception(f"The following titles are invalid: {", ".join(r["title"] for r in invalid_results)}")
+
+        results_by_title = key_by(results.values(), lambda result: result["title"])
+
+        return await self.load_pages(pageids=[results_by_title[title]["pageid"] for title in titles])
