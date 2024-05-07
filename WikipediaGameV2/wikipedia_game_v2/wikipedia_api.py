@@ -40,27 +40,23 @@ class WikipediaAPI:
 
             # "prop links" parameters
             "pllimit": "max",
-            "plnamespace": '0|4',  # limit to "Main" and "Wikipedia" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
+            "plnamespace": '0',  # limit to "Main" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
+            # Categories 4 and 14 were attempted, but had some pages with so many linkshere that it's impossible to load
+            # due to the API falling over
 
             # "links here" parameters
             "lhlimit": "max",
-            "lhnamespace": '0|4',
+            "lhnamespace": '0',
         }
 
         print('Fetching simple query')
 
-        r = await self._request(params)
-
-        print(r.url)
-
-        result = r.json()
+        result = await self._request(params, diagnostics=True)
 
         full_query_pages = result['query']['pages']
 
         while 'continue' in result:
-            r = await self._request({**params, **result['continue']})
-
-            result = r.json()
+            result = await self._request({**params, **result['continue']})
 
             result_pages = result['query']['pages']
 
@@ -93,32 +89,36 @@ class WikipediaAPI:
 
             # "prop links" parameters
             "gpllimit": "max",
-            "gplnamespace": "0|4" # limit to "Main" and "Wikipedia" namespaces (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
+            "gplnamespace": "0" # limit to "Main" namespace (https://en.wikipedia.org/wiki/Help:MediaWiki_namespace)
         }
 
         print('Fetching links generator')
 
-        r = await self._request(params)
-
-        print(r.url)
-
-        result = r.json()
+        result = await self._request(params, diagnostics=True)
 
         all_links = result['query']['pages']
 
         while 'continue' in result:
-            r = await self._request({**params, **result['continue']})
-
-            result = r.json()
+            result = await self._request({**params, **result['continue']})
 
             all_links.update(result['query']['pages'])
 
         return all_links
 
-    @retry(retry=retry_if_exception_type(httpx.ReadTimeout), stop=stop_after_attempt(3))
-    async def _request(self, params) -> Response:
-        r = await self.client.get(WIKIPEDIA_API_URL, params=params, timeout=30.0)
+    @retry(retry=retry_if_exception_type(httpx.ReadTimeout), stop=stop_after_attempt(10))
+    async def _request(self, params, diagnostics=False) -> dict:
+        try:
+            r = await self.client.get(WIKIPEDIA_API_URL, params=params, timeout=6.0)
 
-        return r
+            if diagnostics:
+                print(r.elapsed, r.url)
+
+            return r.json()
+        except httpx.ReadTimeout as e:
+            print('ReadTimeout URL:', str(e.request.url))
+            raise e
+        except Exception as e:
+            print('uh oh!')
+            raise e
 
 

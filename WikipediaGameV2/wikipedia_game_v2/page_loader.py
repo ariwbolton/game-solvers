@@ -27,7 +27,7 @@ class PageLoader:
         missing_pageids: set[int] = set(pageids) - set(page.id for page in cached_pages)
 
         CHUNK_SIZE = 1
-        PARALLELISM = 10
+        PARALLELISM = 20
 
         semaphore = asyncio.Semaphore(value=PARALLELISM)
 

@@ -33,7 +33,10 @@ async def main(client: httpx.AsyncClient) -> None:
     if path is None:
         print('No path found!')
     else:
-        print(path)
+        print(f'FOUND PATH!! Length {len(path)}')
+
+        for page in path:
+            print(page)
 
 
 if __name__ == '__main__':

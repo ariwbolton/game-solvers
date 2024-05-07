@@ -37,6 +37,8 @@ class BFSInspectable:
     def path(self, target: int) -> list[int] | None:
         """Get path from start to target"""
         path = []
+
+        # Start with target and iterate backwards
         current = target
 
         while current != self.start.id:
@@ -47,7 +49,7 @@ class BFSInspectable:
 
             current = self.prevs[current]
 
-        return list(reversed(path))
+        return [self.start.id] + list(reversed(path))
 
     def _get_links(self, page: Page):
         return page.links if self.direction == 'forward' else page.backlinks
