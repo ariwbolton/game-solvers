@@ -1,10 +1,6 @@
-import os
-
 import httpx
-import requests
-import requests_cache
-
-from wikipedia_game_v2.constants import DATA_DIR
+from httpx import Response
+from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 
@@ -53,7 +49,7 @@ class WikipediaAPI:
 
         print('Fetching simple query')
 
-        r = await self.client.get(WIKIPEDIA_API_URL, params=params)
+        r = await self._request(params)
 
         print(r.url)
 
@@ -62,10 +58,7 @@ class WikipediaAPI:
         full_query_pages = result['query']['pages']
 
         while 'continue' in result:
-            print('Paginating simple query')
-            r = await self.client.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
-
-            print(r.url)
+            r = await self._request({**params, **result['continue']})
 
             result = r.json()
 
@@ -105,7 +98,7 @@ class WikipediaAPI:
 
         print('Fetching links generator')
 
-        r = await self.client.get(WIKIPEDIA_API_URL, params=params)
+        r = await self._request(params)
 
         print(r.url)
 
@@ -114,14 +107,18 @@ class WikipediaAPI:
         all_links = result['query']['pages']
 
         while 'continue' in result:
-            print('Paginating links generator')
-            r = await self.client.get(WIKIPEDIA_API_URL, params={**params, **result['continue']})
-
-            print(r.url)
+            r = await self._request({**params, **result['continue']})
 
             result = r.json()
 
             all_links.update(result['query']['pages'])
 
         return all_links
+
+    @retry(retry=retry_if_exception_type(httpx.ReadTimeout), stop=stop_after_attempt(3))
+    async def _request(self, params) -> Response:
+        r = await self.client.get(WIKIPEDIA_API_URL, params=params, timeout=30.0)
+
+        return r
+
 

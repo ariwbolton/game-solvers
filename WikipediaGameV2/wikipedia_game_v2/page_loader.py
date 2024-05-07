@@ -1,3 +1,4 @@
+import asyncio
 from typing import Iterable
 
 from pydash import chunk, key_by, compact
@@ -25,22 +26,33 @@ class PageLoader:
         # Then, fetch page from Wikipedia for all pages we don't already have, and store back in cache for later use
         missing_pageids: set[int] = set(pageids) - set(page.id for page in cached_pages)
 
-        all_fetched_pages: list[Page] = []
+        CHUNK_SIZE = 1
+        PARALLELISM = 10
 
-        # TODO: Add concurrency
+        semaphore = asyncio.Semaphore(value=PARALLELISM)
 
-        for missing_pageid_chunk in chunk(list(missing_pageids), size=1):
-            fetched_pages = await self.fetch_remote_pages(list(missing_pageid_chunk))
+        async def fetch_and_store(pageids: list[int]):
+            async with semaphore:
+                fetched_pages = await self.fetch_remote_pages(pageids)
 
             for fetched_page in fetched_pages:
                 self.page_file_cache.store(fetched_page)
 
             print(f'Stored {len(fetched_pages)} pages')
 
-            all_fetched_pages.extend(fetched_pages)
+            return fetched_pages
+
+        coros = []
+
+        for missing_pageid_chunk in chunk(list(missing_pageids), size=CHUNK_SIZE):
+            coros.append(fetch_and_store(list(missing_pageid_chunk)))
+
+        fetched_pages_results = await asyncio.gather(*coros)
+
+        fetched_pages = [page for result in fetched_pages_results for page in result]
 
         # Finally, return in-order
-        pages = cached_pages + all_fetched_pages
+        pages = cached_pages + fetched_pages
 
         pages_by_id = key_by(pages, lambda page: page.id)
 
@@ -49,7 +61,7 @@ class PageLoader:
     async def fetch_remote_pages(self, pageids: list[int]) -> list[Page]:
         """Fetches pages directly from Wikipedia, with no knowledge of the cache at all
 
-        Can handle a long list; uses concurrency
+        Limited to 50 pages; wikipedia will only fetch that many at once
         """
         if not pageids:
             return []
@@ -57,8 +69,6 @@ class PageLoader:
         # Wikipedia API only supports 50 pageids at a time
         if len(pageids) > 50:
             raise Exception(f'Tried to fetch too many remote pages ({len(pageids)}); the limit is 50')
-
-        # TODO: add concurrency
 
         print(f"Fetching {len(pageids)} pages")
 
